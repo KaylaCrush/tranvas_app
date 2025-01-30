@@ -12,6 +12,7 @@ class CanvasIntegration:
         self.termID = 231
         self.current_courses = self.request_current_courses()
         self.all_assignments = self.request_assignments()
+        self.course_dict = {course['id']:course['name'].split(" - ")[-1] for course in self.current_courses}
 
     def request_current_courses(self):
         url = "https://canvas.seattlecolleges.edu/api/v1/courses"

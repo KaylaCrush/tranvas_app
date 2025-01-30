@@ -1,5 +1,5 @@
-from canvasIntegration import CanvasIntegration
-from trelloIntegration import TrelloIntegration
+from integrations.canvasIntegration import CanvasIntegration
+from integrations.trelloIntegration import TrelloIntegration
 from datetime import datetime, timezone
 
 class IntegrationManager:
@@ -14,27 +14,28 @@ class IntegrationManager:
         return difference.days
 
     def place_assignment(self, assignment):
-        # 0 = unavailable
-        # 1 = available
-        # 2 = due soon
-        # 3 = doing
-        # 4 = waiting for grade
-        # 5 = graded
+        # 0 = available
+        # 1 = due soon
+        # 2 = doing
+        # 3 = waiting for grade
+        # 4 = graded
         if assignment['submissions']['graded_at'] != None:
             return 4
         if assignment['submissions']['submitted_at'] != None:
             return 3
-        if self.due_in_days(assignment) < 12:
+        if self.due_in_days(assignment) <= 14:
             return 1
         return 0
+
+    def generate_assignment_description(self,assignment):
+        return self.canvas.course_dict[assignment['course_id']] + "\n" +assignment['html_url']
 
     def create_or_update_assignment(self, assignment):
         if not self.has_assignment_card(assignment):
             return self.create_assignment_card(assignment)
-        if self.get_list_index_for_assignment(assignment) != self.place_assignment(assignment):
+        if self.get_list_index_for_assignment(assignment) < self.place_assignment(assignment):
             return self.move_assignment_card(assignment)
         return {"hey":"LOOKS GOOD BOSS"}
-
 
     def create_or_update_all_assignments(self):
         for assignment in self.canvas.all_assignments:
@@ -58,12 +59,21 @@ class IntegrationManager:
             destination_index = self.place_assignment(assignment)
         card = self.get_card_for_assignment(assignment)
         destination_id = self.trello.get_list_id_by_index(destination_index)
-
         return self.trello.request_move_card(card['id'],destination_id)
+
+    def get_assignment_label(self, assignment):
+        course_name = self.canvas.course_dict[assignment['course_id']]
+        label_id = [label['id'] for label in self.trello.labels if label['name'] == course_name][0]
+        return label_id
 
 
     def create_assignment_card(self,assignment):
-        self.trello.cards.append(self.trello.create_card(self.place_assignment(assignment),assignment['name'],assignment['html_url'],assignment['due_at']))
+        self.trello.cards.append(self.trello.create_card(
+            listIndex=self.place_assignment(assignment),
+            name=assignment['name'],
+            desc=self.generate_assignment_description(assignment),
+            due=assignment['due_at'],
+            label=self.get_assignment_label(assignment)))
 
     def has_assignment_card(self,assignment):
         return assignment['name'] in [card['name'] for card in self.trello.cards]

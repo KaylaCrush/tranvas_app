@@ -13,7 +13,7 @@ class TrelloIntegration:
         self.labels = self.request_get_labels()
         pass
 
-    def create_card(self, listIndex, name, desc, due):
+    def create_card(self, listIndex, name, desc, due, label):
         url = "https://api.trello.com/1/cards"
         params = {
             "key": api_key,
@@ -21,10 +21,16 @@ class TrelloIntegration:
             "idList":self.lists[listIndex],
             "name":name,
             "desc":desc,
-            "due":due
+            "due":due,
+            "idLabels":[label]
         }
         response = self.request(url, params, request_type="POST")
         return response
+
+    def delete_all_cards(self):
+        for card in self.cards:
+            self.request_delete_card(card['id'])
+
 
     def request_delete_card(self, cardID):
         url = f"https://api.trello.com/1/cards/{cardID}"
