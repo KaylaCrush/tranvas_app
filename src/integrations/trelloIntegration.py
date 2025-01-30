@@ -1,6 +1,5 @@
-import requests, os, dotenv
+import requests, os
 
-dotenv.load_dotenv()
 # API credentials
 api_key = os.getenv("TRELLO_KEY")
 api_token = os.getenv("TRELLO_TOKEN")

@@ -1,5 +1,4 @@
-import requests, os, dotenv
-dotenv.load_dotenv()
+import requests, os
 
 class CanvasIntegration:
 
