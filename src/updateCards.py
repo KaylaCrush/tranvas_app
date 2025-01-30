@@ -1,2 +1,0 @@
-from integrations.integrationManager import IntegrationManager
-IntegrationManager().create_or_update_all_assignments()

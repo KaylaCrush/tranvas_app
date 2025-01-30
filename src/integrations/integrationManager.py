@@ -1,5 +1,5 @@
-from integrations.canvasIntegration import CanvasIntegration
-from integrations.trelloIntegration import TrelloIntegration
+from src.integrations.canvasIntegration import CanvasIntegration
+from src.integrations.trelloIntegration import TrelloIntegration
 from datetime import datetime, timezone
 
 class IntegrationManager:

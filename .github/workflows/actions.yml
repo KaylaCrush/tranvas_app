@@ -24,8 +24,11 @@ jobs:
 
       - name: execute py script # run main.py
         env:
-          SOME_SECRET: ${{ secrets.SOME_SECRET }}
-        run: python main.py
+          CANVAS_TOKEN: ${{ secrets.CANVAS_TOKEN }}
+          TRELLO_TOKEN: ${{ secrets.TRELLO_TOKEN }}
+          TRELLO_KEY: ${{ secrets.TRELLO_KEY }}
+
+        run: python updateCards.py
 
       - name: commit files
         run: |
@@ -38,4 +41,4 @@ jobs:
         uses: ad-m/github-push-action@v0.6.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main 
+          branch: main
