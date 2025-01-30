@@ -2,7 +2,7 @@ name: run updateCards.py
 
 on:
   schedule:
-    - cron: '0 0 * * *' # At 00:00 every day
+    - cron: '58 * * * *' # At 00:00 every day
 
 jobs:
   build:
