@@ -19,6 +19,8 @@ class IntegrationManager:
         # 2 = doing
         # 3 = waiting for grade
         # 4 = graded
+        if 'due_at' not in assignment.keys() or assignment['due_at'] == None:
+            return 0
         if assignment['submissions']['graded_at'] != None:
             return 4
         if assignment['submissions']['submitted_at'] != None:

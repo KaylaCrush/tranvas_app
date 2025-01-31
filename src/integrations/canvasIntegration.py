@@ -16,7 +16,7 @@ class CanvasIntegration:
     def request_current_courses(self):
         url = "https://canvas.seattlecolleges.edu/api/v1/courses"
         all_courses = self.request(url)
-        current_courses = [course for course in all_courses if course['enrollment_term_id'] == self.termID]
+        current_courses = [course for course in all_courses if 'enrollment_term_id' in course.keys() and course['enrollment_term_id'] == self.termID]
         return current_courses
 
     def request_assignments(self):
@@ -25,26 +25,49 @@ class CanvasIntegration:
             # Gets all assignments
             assignments_url = f"https://canvas.seattlecolleges.edu/api/v1/courses/{course['id']}/assignments"
             for assignment in self.request(assignments_url):
-                # gets my submissions
-                submissions_url = f"{assignments_url}/{assignment['id']}/submissions/{self.userID}"
-                assignment['submissions'] = self.request(submissions_url)
-                assignments.append(assignment)
+                    if 'participation' not in assignment['name'].lower():
+                        # gets my submissions
+                        submissions_url = f"{assignments_url}/{assignment['id']}/submissions/{self.userID}"
+                        assignment['submissions'] = self.request(submissions_url)[0]
+                        assignments.append(assignment)
         return assignments
 
     def request(self, url, params={}, request_type="GET"):
-        params.update({
+        headers = {
             "Authorization": "Bearer " + os.getenv("CANVAS_TOKEN")
-        })
+        }
 
-        response = "DERP"
-        # Send the request
-        if request_type == "GET":
-            response = requests.get(url, headers=params)
-        if request_type == "POST":
-            response = requests.post(url, headers=params)
+        results = []  # To store all the data from paginated requests
 
-        # Print response
-        if response.status_code == 200:
-            return response.json()
-        else:
-            print(f"Error: {response.status_code}, {response.text}")
+        while url:
+            # Send the request
+            if request_type == "GET":
+                response = requests.get(url, headers=headers, params=params)
+            elif request_type == "POST":
+                response = requests.post(url, headers=headers, json=params)
+            else:
+                raise ValueError(f"Unsupported request type: {request_type}")
+
+            # Check for a successful response
+            if response.status_code == 200:
+                data = response.json()
+                # Append the data to results
+                if isinstance(data, list):
+                    results.extend(data)
+                else:
+                    results.append(data)
+
+                # Parse the 'Link' header to find the next page URL
+                link_header = response.headers.get('Link', '')
+                next_url = None
+                for part in link_header.split(','):
+                    if 'rel="next"' in part:
+                        next_url = part[part.find('<') + 1:part.find('>')]
+                        break
+                url = next_url  # Update the URL for the next request
+                params = {}  # Clear params for subsequent requests
+            else:
+                print(f"Error: {response.status_code}, {response.text}")
+                break
+
+        return results
