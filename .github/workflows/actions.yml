@@ -3,6 +3,7 @@ name: run updateCards.py
 on:
   schedule:
     - cron: '0 0 * * *' # At 00:00 every day
+  workflow_dispatch:
 
 jobs:
   build:
