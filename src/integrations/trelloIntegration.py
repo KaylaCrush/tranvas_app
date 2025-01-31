@@ -52,7 +52,7 @@ class TrelloIntegration:
     def request_id(self):
         url = "https://api.trello.com/1/members/me/boards"
         for board in self.request(url):
-            if board['name'] == "The CrushBoard":
+            if board['name'] == "The CrushBoard": # TODO: Make this a variable somehow. Environment variable, or something. Maybe find it automatically somehow.
                 return board['id']
 
     def request(self, url, params={}, request_type="GET"):

@@ -7,8 +7,8 @@ class CanvasIntegration:
     get_todo = base_url+"users/self/todo"
 
     def __init__(self):
-        self.userID = 2233
-        self.termID = 231
+        self.userID = 2233 # TODO: find automatically / user input
+        self.termID = 231 # TODO: Find automatically somehow
         self.current_courses = self.request_current_courses()
         self.all_assignments = self.request_assignments()
         self.course_dict = {course['id']:course['name'].split(" - ")[-1] for course in self.current_courses}
