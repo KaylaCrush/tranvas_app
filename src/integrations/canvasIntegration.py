@@ -1,4 +1,45 @@
 import requests, os
+from datetime import datetime, timezone
+from src.integrations.stateManager import StateManager
+
+class Assignment:
+    def __init__(self, assignment_data):
+        self.data = assignment_data
+
+    def __repr__(self):
+        return self.data
+
+    def is_complete(self):
+        # Cases:
+        # Assignment is a zybooks assignment. Zybooks are only complete when they are 100% complete
+        # Assignment is anything else. Other assignments are marked complete when they have a submission
+        if self.has_duedate() and self.has_submissions():
+            if self.is_zybook() and self.submissions()['score'] == 100.0:
+                return True
+            return True
+        return False
+
+    def submissions(self):
+        return self.data['submissions']
+
+    def has_submissions(self):
+        return self.data['submissions']['submitted_at'] != None
+
+    def is_graded(self):
+        return self.data['submissions']['graded_at'] != None and self.is_complete()
+
+    def has_duedate(self):
+        return 'due_at' in self.data.keys() and self.data['due_at'] != None
+
+    def is_zybook(self):
+        return 'zybook' in self.data['name'].lower()
+
+    def days_till_due(self):
+        assignment = self.data
+        timestamp_dt = datetime.strptime(assignment['due_at'], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
+        current_time = datetime.now(timezone.utc)
+        difference = timestamp_dt-current_time
+        return difference.days
 
 class CanvasIntegration:
 
@@ -7,11 +48,12 @@ class CanvasIntegration:
     get_todo = base_url+"users/self/todo"
 
     def __init__(self):
-        self.userID = 2233 # TODO: find automatically / user input
-        self.termID = 231 # TODO: Find automatically somehow
-        self.current_courses = self.request_current_courses()
+        self.sm = StateManager()
+        self.userID = self.sm.getOrPut('canvas_userid', 2233) # TODO: find automatically / user input
+        self.termID = self.sm.getOrPut('canvas_term_id', 231) # TODO: Find automatically somehow
+        self.current_courses = self.sm.getOrPut('canvas_current_courses',self.request_current_courses())
         self.all_assignments = self.request_assignments()
-        self.course_dict = {course['id']:course['name'].split(" - ")[-1] for course in self.current_courses}
+        self.course_dict = self.sm.getOrPut('course_dict', {course['id']:course['name'].split(" - ")[-1] for course in self.current_courses})
 
     def request_current_courses(self):
         url = "https://canvas.seattlecolleges.edu/api/v1/courses"
@@ -29,7 +71,7 @@ class CanvasIntegration:
                         # gets my submissions
                         submissions_url = f"{assignments_url}/{assignment['id']}/submissions/{self.userID}"
                         assignment['submissions'] = self.request(submissions_url)[0]
-                        assignments.append(assignment)
+                        assignments.append(Assignment(assignment))
         return assignments
 
     def request(self, url, params={}, request_type="GET"):
