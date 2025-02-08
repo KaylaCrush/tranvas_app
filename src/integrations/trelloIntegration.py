@@ -26,6 +26,16 @@ class TrelloIntegration:
         response = self.request(url, params, request_type="POST")
         return response
 
+    def create_label(self,name,color):
+        url = "https://api.trello.com/1/labels"
+        query = {
+            'name': name,
+            'color': color,
+            'idBoard': self.id,
+        }
+        response = self.request(url,query, request_type="POST")
+        return response
+
     def delete_all_cards(self):
         for card in self.cards:
             self.request_delete_card(card['id'])
@@ -50,11 +60,13 @@ class TrelloIntegration:
         return self.lists[index]
 
     def request_id(self):
-        url = "https://api.trello.com/1/members/me/boards"
-        for board in self.request(url):
-            if board['name'] == "The CrushBoard": # TODO: Make this a variable somehow. Environment variable, or something. Maybe find it automatically somehow.
+        for board in self.request_boards():
+            if 'Managed By App' in board['labelNames'].values():
                 return board['id']
 
+    def request_boards(self):
+        url = "https://api.trello.com/1/members/me/boards"
+        return self.request(url)
     def request(self, url, params={}, request_type="GET"):
         params.update({
             "key": api_key,
