@@ -9,7 +9,7 @@ class TrelloIntegration:
     def post_card(self, listIndex, name, desc, due, label, urlSource=None):
         url = "https://api.trello.com/1/cards"
         params = {
-            "idList":self.list_dict[listIndex],
+            "idList":self.lists[listIndex]['id'],
             "name":name,
             "desc":desc,
             "due":due,

@@ -74,7 +74,7 @@ class IntegrationManager:
         if destination_index == None:
             destination_index = self.place_assignment(assignment)
         card = self.get_card_for_assignment(assignment)
-        destination_id = self.trello.get_list_id_by_index(destination_index)
+        destination_id = self.trello.lists[destination_index]
         return self.trello.put_card(card['id'],destination_id)
 
     def get_assignment_label(self, assignment):
@@ -92,4 +92,7 @@ class IntegrationManager:
             urlSource=assignment['html_url']))
 
     def has_assignment_card(self,assignment):
-        return assignment['name'] in [card['name'] for card in self.trello.cards]
+        for card in self.trello.cards:
+            if type(card) == dict and 'name' in card.keys() and assignment['name'] == card['name']:
+                return True
+        return False
