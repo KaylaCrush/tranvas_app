@@ -54,7 +54,8 @@ class IntegrationManager:
 
     def create_or_update_all_assignments(self):
         for assignment in self.canvas.all_assignments:
-            self.create_or_update_assignment(assignment)
+            if assignment['due_at'] is not None and 'participation' not in assignment['name'].lower() and 'kahoot' not in assignment['name'].lower():
+                self.create_or_update_assignment(assignment)
         return "WHAT WHAT"
 
     def get_list_index_for_assignment(self, assignment):

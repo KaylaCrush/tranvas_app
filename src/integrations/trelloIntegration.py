@@ -13,8 +13,7 @@ class TrelloIntegration:
             "name":name,
             "desc":desc,
             "due":due,
-            "idLabels":[label,'Managed By App'],
-            "urlSource":urlSource
+            "idLabels":[label,self.get_managed_by_label()]
         }
         response = self.trello_request(url, params, request_type=requests.post)
         return response
@@ -43,6 +42,9 @@ class TrelloIntegration:
         }
         response = self.trello_request(url,query, request_type=requests.post)
         return response
+
+    def get_managed_by_label(self):
+        return [label['id'] for label in self.labels if label['name'] == "Managed By App"][0]
 
     def delete_all_cards(self):
         for card in self.cards:

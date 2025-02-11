@@ -2,6 +2,7 @@ import requests, os, json
 from src.util import make_request
 
 class CanvasIntegration:
+
     def __init__(self):
         self.base_url = f"https://{self.load_instance_url()}/api/v1"
         self.userID = self.request_canvas_id()
@@ -41,6 +42,7 @@ class CanvasIntegration:
             # Gets all assignments
             assignments_url = f"{self.base_url}/courses/{course['id']}/assignments"
             for assignment in self.canvas_request(assignments_url):
+
                     if 'participation' not in assignment['name'].lower():
                         # gets my submissions
                         submissions_url = f"{assignments_url}/{assignment['id']}/submissions/{self.userID}"
