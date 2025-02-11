@@ -1,97 +1,105 @@
 import requests, os
+from src.util import make_request
 
 # API credentials
 api_key = os.getenv("TRELLO_KEY")
 api_token = os.getenv("TRELLO_TOKEN")
 
 class TrelloIntegration:
-    def __init__(self):
-        self.id = self.request_id()
-        self.lists = self.request_lists()
-        self.cards = self.request_cards()
-        self.labels = self.request_get_labels()
-        pass
-
-    def create_card(self, listIndex, name, desc, due, label):
+    def post_card(self, listIndex, name, desc, due, label, urlSource=None):
         url = "https://api.trello.com/1/cards"
         params = {
-            "key": api_key,
-            "token": api_token,
-            "idList":self.lists[listIndex],
+            "idList":self.list_dict[listIndex],
             "name":name,
             "desc":desc,
             "due":due,
-            "idLabels":[label]
+            "idLabels":[label,'Managed By App'],
+            "urlSource":urlSource
         }
-        response = self.request(url, params, request_type="POST")
+        response = self.trello_request(url, params, request_type=requests.post)
+        return response
+
+    def delete_board(self, board_id):
+        url = f"https://api.trello.com/1/boards/{board_id}"
+        return self.trello_request(url, request_type=requests.delete)
+
+    def post_board(self, name, params = {}):
+        url = "https://api.trello.com/1/boards"
+        params.update({'name':name})
+        return self.trello_request(url, params, request_type=requests.post)
+
+    def post_list(self, name, idBoard):
+        url = f"https://api.trello.com/1/boards/{idBoard}/lists"
+        params = {'name':name}
+        return self.trello_request(url, params, request_type=requests.post)
+
+    def post_label(self,name,color,idBoard=None):
+        url = "https://api.trello.com/1/labels"
+        idBoard = idBoard if idBoard else self.id
+        query = {
+            'name': name,
+            'color': color,
+            'idBoard': idBoard,
+        }
+        response = self.trello_request(url,query, request_type=requests.post)
         return response
 
     def delete_all_cards(self):
         for card in self.cards:
-            self.request_delete_card(card['id'])
+            self.delete_card(card['id'])
 
-
-    def request_delete_card(self, cardID):
+    def delete_card(self, cardID):
         url = f"https://api.trello.com/1/cards/{cardID}"
-        return self.request(url,request_type="DELETE")
+        return self.trello_request(url,request_type=requests.delete)
 
-
-    def request_cards(self):
-        cards = []
-        for listID in self.lists:
-            url = f"https://api.trello.com/1/lists/{listID}/cards"
-            cards += self.request(url)
-        return cards
+    def get_cards(self):
+        url = f"https://api.trello.com/1/boards/{self.id}/cards"
+        return self.trello_request(url)
 
     def get_list_index_by_id(self,listID):
-        return self.lists.index(listID)
+        return [list['id'] for list in self.lists].index(listID)
 
-    def get_list_id_by_index(self, index):
-        return self.lists[index]
+    def create_app_board(self,boardName="Canvas App"):
+        params = {
+            'defaultLabels':'false',
+            'defaultLists':'false',
+            'idBoardSource':'679aabbe7f95308962f44da9',
+            'keepFromSource':'none'
+        }
+        return self.post_board(boardName,params=params)
 
-    def request_id(self):
-        url = "https://api.trello.com/1/members/me/boards"
-        for board in self.request(url):
-            if board['name'] == "The CrushBoard": # TODO: Make this a variable somehow. Environment variable, or something. Maybe find it automatically somehow.
+    def find_managed_board(self):
+        for board in self.boards:
+            if 'Managed By App' in board['labelNames'].values():
                 return board['id']
+        board = self.create_app_board()
+        return board[0]['id']
 
-    def request(self, url, params={}, request_type="GET"):
+    def get_my_boards(self):
+        url = "https://api.trello.com/1/members/me/boards"
+        return self.trello_request(url)
+
+    def trello_request(self, url, params={}, request_type=requests.get):
         params.update({
             "key": api_key,
             "token": api_token
         })
+        return make_request(url=url, params=params, request_type=request_type)
 
-        response = "DERP"
-        # Send the request
-        if request_type == "GET":
-            response = requests.get(url=url, params=params)
-        if request_type == "POST":
-            response = requests.post(url=url, params=params)
-        if request_type == "PUT":
-            response = requests.put(url=url, params=params)
-        if request_type == "DELETE":
-            response = requests.delete(url=url, params=params)
-
-        # Print response
-        if response.status_code == 200:
-            return response.json()
-        else:
-            print(f"Error: {response.status_code}, {response.text}")
-
-    def request_lists(self):
+    def get_lists(self):
         url = f"https://api.trello.com/1/boards/{self.id}/lists"
-        response = self.request(url)
-        return [d['id'] for d in response]
-
-    def request_move_card(self, card_id, destination_list_id):
-        url = f"https://api.trello.com/1/cards/{card_id}"
-        params = {"idList":destination_list_id}
-        response = self.request(url, params=params, request_type="PUT")
+        response = self.trello_request(url)
         return response
 
-    def request_get_labels(self):
+    def put_card(self, card_id, destination_list_id):
+        url = f"https://api.trello.com/1/cards/{card_id}"
+        params = {"idList":destination_list_id}
+        response = self.trello_request(url, params=params, request_type=requests.put)
+        return response
+
+    def get_labels(self):
         url = f"https://api.trello.com/1/boards/{self.id}/labels"
-        response = self.request(url)
+        response = self.trello_request(url)
         return [label for label in response if label['name']!= ""]
 
 
