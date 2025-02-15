@@ -32,13 +32,25 @@ class IntegrationManager:
         # 2 = doing
         # 3 = waiting for grade
         # 4 = graded
+
+        if 'zybook' in assignment['name'].lower():
+            if self.due_in_days(assignment) <= 14:
+                if assignment['submissions']['grade'] and 0 < float(assignment['submissions']['grade']) < 100:
+                    return 2
+                return 1
+            return 0
+
         if 'due_at' not in assignment.keys() or assignment['due_at'] == None:
             return 0
+
         if assignment['submissions']['graded_at'] != None:
             return 4
+
         if assignment['submissions']['submitted_at'] != None:
             return 3
+
         if self.due_in_days(assignment) <= 14:
+
             return 1
         return 0
 
@@ -49,6 +61,7 @@ class IntegrationManager:
         if not self.has_assignment_card(assignment):
             return self.create_assignment_card(assignment)
         if self.get_list_index_for_assignment(assignment) < self.place_assignment(assignment):
+            print("attempting to move")
             return self.move_assignment_card(assignment)
         return {"hey":"LOOKS GOOD BOSS"}
 
@@ -74,8 +87,8 @@ class IntegrationManager:
         if destination_index == None:
             destination_index = self.place_assignment(assignment)
         card = self.get_card_for_assignment(assignment)
-        destination_id = self.trello.lists[destination_index]
-        return self.trello.put_card(card['id'],destination_id)
+        destination_list = self.trello.lists[destination_index]
+        return self.trello.put_card(card['id'],destination_list['id'])
 
     def get_assignment_label(self, assignment):
         course_name = self.canvas.course_dict[assignment['course_id']]
